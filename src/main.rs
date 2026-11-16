@@ -21,14 +21,19 @@ async fn main() -> anyhow::Result<()> {
         Some(view) => view,
         None if all_views.is_some() => View::All,
         None => {
-            println!("You must provide 'view' or 'all_views'");
-            std::process::exit(1);
+            anyhow::bail!("You must provide 'view' or 'all_views'")
         }
     };
-    let skin = skin::download(args.username)
-        .await
-        .context("Error while downloading skin")?
-        .to_rgba8();
+    let skin = if let Some(username) = args.username {
+        skin::download(username)
+            .await
+            .context("Error while downloading skin")?
+    } else if let Some(input) = args.input {
+        image::open(&input)
+            .with_context(|| format!("Unable to load skin from {}", input.display()))?
+    } else {
+        anyhow::bail!("You must provide either 'username' or 'input'");
+    };
     let is_slim = skin::detect_slim(skin.clone());
 
     match view {
@@ -54,6 +59,9 @@ async fn main() -> anyhow::Result<()> {
         }
         view => {
             let output = output.unwrap_or_else(|| PathBuf::from("chibi.png"));
+            std::fs::create_dir_all(&output).with_context(|| {
+                format!("Unable to create output directory {}", output.display())
+            })?;
             save_view(&skin, is_slim, view, scale, &output)?;
         }
     }
@@ -62,12 +70,13 @@ async fn main() -> anyhow::Result<()> {
 }
 
 fn save_view(
-    skin: &image::RgbaImage,
+    skin: &image::DynamicImage,
     is_slim: bool,
     view: View,
     scale: u32,
     output: &Path,
 ) -> anyhow::Result<()> {
+    let skin = &skin.to_rgba8();
     let image = renderer::compose_view(skin, is_slim, view)?;
     let image = resize(&image, 24 * scale, 33 * scale, FilterType::Nearest);
     let image = trim_transparent_border(&image);

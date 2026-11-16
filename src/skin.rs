@@ -1,5 +1,5 @@
 use anyhow::{Context, Result, bail};
-use image::{DynamicImage, RgbaImage};
+use image::DynamicImage;
 use reqwest::StatusCode;
 
 pub async fn download(username: impl Into<String>) -> Result<DynamicImage> {
@@ -65,7 +65,8 @@ fn url_encode(string: impl Into<String>) -> String {
         .collect()
 }
 
-pub fn detect_slim(skin: RgbaImage) -> bool {
+pub fn detect_slim(skin: DynamicImage) -> bool {
+    let skin = skin.to_rgba8();
     let alpha = |x: u32, y: u32| skin.get_pixel(x, y).0[3] >= 128;
     let mut occupied = false;
     for y in 20..32 {

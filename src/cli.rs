@@ -36,27 +36,31 @@ pub enum View {
 )]
 pub struct Args {
     /// Nom d'utilisateur Java
-    #[arg(short, long)]
-    pub username: String,
+    #[arg(short, long, conflicts_with = "input", value_name = "username")]
+    pub username: Option<String>,
+
+    /// Charger le skin depuis un fichier
+    #[arg(short, long, conflicts_with = "username", value_name = "path")]
+    pub input: Option<PathBuf>,
 
     /// Chemin du fichier .png du résultat
-    #[arg(short, long, value_name = "FICHIER")]
+    #[arg(short, long, value_name = "path")]
     pub output: Option<PathBuf>,
 
     /// Facteur entier d'agrandissement (par défaut : 1 = rendu natif 24x33).
     #[arg(
         short,
         long,
-        value_name = "SCALE",
+        value_name = "scale",
         value_parser = clap::value_parser!(u32).range(1..=64),
     )]
     pub scale: Option<u32>,
 
     /// La vue va être créée (par défaut : right 3/4).
-    #[arg(short, long, value_enum)]
+    #[arg(short, long, value_enum, conflicts_with = "all_views", value_name = "view")]
     pub view: Option<View>,
 
     /// Créer toutes les vues (doit recevoir un dossier).
-    #[arg(short, long, value_name = "DOSSIER", conflicts_with_all = ["output", "view"])]
+    #[arg(short, long, value_name = "path", conflicts_with_all = ["output", "view"])]
     pub all_views: Option<PathBuf>,
 }
