@@ -1,5 +1,5 @@
 use anyhow::{Context, Result, bail};
-use image::DynamicImage;
+use image::{DynamicImage, GenericImageView};
 use reqwest::StatusCode;
 
 pub async fn download(username: impl Into<String>) -> Result<DynamicImage> {
@@ -45,13 +45,19 @@ pub async fn download(username: impl Into<String>) -> Result<DynamicImage> {
             response.status()
         );
     }
-    image::load_from_memory(
+    let image = image::load_from_memory(
         &response
             .bytes()
             .await
             .context("Le skin retourné est vide.")?,
     )
-    .context("Le format du skin n'est pas un PNG valide")
+    .expect("Le format du skin n'est pas un PNG valide");
+
+    if image.dimensions() != (64, 64) {
+        bail!("L'image du skin ne fait pas 64x64")
+    } else {
+        Ok(image)
+    }
 }
 
 fn url_encode(string: impl Into<String>) -> String {

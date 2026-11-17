@@ -57,7 +57,13 @@ pub struct Args {
     pub scale: Option<u32>,
 
     /// La vue va être créée (par défaut : right 3/4).
-    #[arg(short, long, value_enum, conflicts_with = "all_views", value_name = "view")]
+    #[arg(
+        short,
+        long,
+        value_enum,
+        conflicts_with = "all_views",
+        value_name = "view"
+    )]
     pub view: Option<View>,
 
     /// Créer toutes les vues (doit recevoir un dossier).
