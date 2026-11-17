@@ -54,15 +54,23 @@ async fn main() -> anyhow::Result<()> {
                 (View::Top, "top.png"),
                 (View::Bottom, "bottom.png"),
             ] {
-                save_view(&skin, is_slim, view, scale, &output.join(filename))?;
+                save_view(
+                    &skin,
+                    is_slim,
+                    view,
+                    scale,
+                    &output.join(filename),
+                    args.no_trim,
+                )?;
             }
         }
         view => {
             let output = output.unwrap_or_else(|| PathBuf::from("chibi.png"));
-            std::fs::create_dir_all(&output).with_context(|| {
+            let parent_folder = output.parent().unwrap();
+            std::fs::create_dir_all(parent_folder).with_context(|| {
                 format!("Unable to create output directory {}", output.display())
             })?;
-            save_view(&skin, is_slim, view, scale, &output)?;
+            save_view(&skin, is_slim, view, scale, &output, args.no_trim)?;
         }
     }
 
@@ -75,11 +83,14 @@ fn save_view(
     view: View,
     scale: u32,
     output: &Path,
+    no_trim: bool,
 ) -> anyhow::Result<()> {
     let skin = &skin.to_rgba8();
     let image = renderer::compose_view(skin, is_slim, view)?;
-    let image = resize(&image, 24 * scale, 33 * scale, FilterType::Nearest);
-    let image = trim_transparent_border(&image);
+    let mut image = resize(&image, 24 * scale, 33 * scale, FilterType::Nearest);
+    if !no_trim {
+        image = trim_transparent_border(&image);
+    }
     image
         .save(output)
         .with_context(|| format!("Unable to save image to {}", output.display()))?;

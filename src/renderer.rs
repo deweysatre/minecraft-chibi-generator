@@ -3,35 +3,21 @@ use crate::positions::{Rect, mapping};
 use anyhow::Result;
 use image::{ImageBuffer, Rgba, RgbaImage};
 
-pub fn compose_view(skin: &RgbaImage, slim: bool, view: View) -> Result<RgbaImage> {
+pub fn compose_view(skin: &RgbaImage, _slim: bool, view: View) -> Result<RgbaImage> {
     let mut canvas = ImageBuffer::from_pixel(24, 33, Rgba([0, 0, 0, 0]));
     for specification in mapping(view) {
-        let destination = if slim {
-            specification.destination
-        } else {
-            specification
-                .wide_destination
-                .unwrap_or(specification.destination)
-        };
         blit_scaled(
             skin,
             &mut canvas,
-            specification.base,
-            destination,
-            specification.mirror_x,
+            specification.source,
+            specification.target,
+            specification.x_flipped.unwrap_or(false),
         );
-        if let Some(overlay) = specification.overlay {
-            blit_scaled(
-                skin,
-                &mut canvas,
-                overlay,
-                destination,
-                specification.mirror_x,
-            );
-        }
-        if specification.side {
-            darken_rect(&mut canvas, destination, 0.86);
-        }
+        darken_rect(
+            &mut canvas,
+            specification.target,
+            specification.luminance.unwrap_or(1.0),
+        );
     }
     Ok(canvas)
 }
@@ -40,9 +26,9 @@ fn darken_rect(image: &mut RgbaImage, rect: Rect, factor: f32) {
     for y in rect.1..(rect.1 + rect.3).min(image.height()) {
         for x in rect.0..(rect.0 + rect.2).min(image.width()) {
             let pixel = image.get_pixel_mut(x, y);
-            pixel.0[0] = (f32::from(pixel.0[0]) * factor).round() as u8;
-            pixel.0[1] = (f32::from(pixel.0[1]) * factor).round() as u8;
-            pixel.0[2] = (f32::from(pixel.0[2]) * factor).round() as u8;
+            for i in 0..3 {
+                pixel.0[i] = (f32::from(pixel.0[i]) * factor).round() as u8;
+            }
         }
     }
 }

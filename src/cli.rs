@@ -29,7 +29,7 @@ pub enum View {
     All,
 }
 
-#[derive(Debug, Parser)]
+#[derive(Debug, Parser, Clone)]
 #[command(
     name = "minecraft-chibi-generator",
     about = "Génère un avatar chibi Classic à partir d'un pseudo Minecraft Java"
@@ -69,4 +69,8 @@ pub struct Args {
     /// Créer toutes les vues (doit recevoir un dossier).
     #[arg(short, long, value_name = "path", conflicts_with_all = ["output", "view"])]
     pub all_views: Option<PathBuf>,
+
+    /// Ne pas trim les lignes transparentes
+    #[arg(long)]
+    pub no_trim: bool,
 }
